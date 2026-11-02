@@ -46,7 +46,7 @@
 ## 安装
 
 ```bash
-git clone <this-repo>
+git clone https://github.com/AnoneX2/bilibot-live.git
 cd bilibot-live
 
 python -m venv .venv
