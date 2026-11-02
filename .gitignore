@@ -1,0 +1,32 @@
+# 本地配置与机密
+config.yaml
+config.yaml.bak
+config.example.yaml.bak
+.env
+
+# 运行产物（cookie / 模型 / 转写 / 决策 / 发送记录 / 日志 / 场次存档）
+data/
+logs/
+*.log
+
+# 模型文件较大，按 MODELS.md 自行下载
+data/models/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+*.egg-info/
+
+# 备份与编辑器
+prompts/.backup/
+*.bak
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 运行期文件（进程管理脚本产生的 pid/锁）
+run/
+*.pid

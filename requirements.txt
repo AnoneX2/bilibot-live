@@ -1,0 +1,14 @@
+# bilibot 依赖（Python >= 3.10，实测 3.13）
+aiohttp>=3.10,<4
+PyYAML>=6.0
+brotli>=1.1
+numpy>=1.26
+# X-ASR：流式 zipformer 的 ONNX 运行时，纯 CPU、无需 torch
+sherpa-onnx==1.13.8
+# 繁体转简体（中文识别结果统一转简体）
+zhconv>=1.4
+# 可选：扫码登录时在终端/图片中展示二维码
+qrcode>=7.4
+Pillow>=10.0
+# 设置面板用于判断 BOT 是否在运行（缺失时显示"未知"，不影响使用）
+psutil>=5.9

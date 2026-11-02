@@ -1,0 +1,157 @@
+# ============================================================
+# bilibot 配置模板
+# 复制为 config.yaml 后修改；命令行参数优先级高于本文件
+# ============================================================
+
+app:
+  # 直播间列表：真实房间号或短号均可（启动时用 room_init 归一化）
+  # 建议用 `python -m src.app panel` 管理，避免手写 YAML 出错
+  rooms:
+    - room_id: 123456
+      alias: "示例直播间"
+      enabled: true        # false = 跳过该房间
+      prompt_dir: ""       # 留空=用全局 prompts；可填独立目录
+  # 只记录不发送，强烈建议先开 true 跑一段时间
+  dry_run: true
+  log_level: INFO
+  log_dir: logs
+  data_dir: data
+  # 全局最小发送间隔（秒），所有房间共享，避免账号级风控
+  global_min_interval_sec: 20
+  # 被 B 站 提示「已在本房间被禁言」时，自动停用该直播间
+  auto_disable_muted: true
+  # 决策/转写/发送记录与场次存档只留最近几天，更早的自动清理；0 = 不清理
+  retention_days: 7
+
+bili:
+  # 登录态缓存，由 `python -m src.app login` 生成
+  cookie_file: data/cookies.json
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36"
+  # 接口失败重试
+  http_timeout_sec: 15
+
+llm:
+  # deepseek | mock | ollama
+  provider: deepseek
+  base_url: "https://api.deepseek.com"
+  # API Key：由设置面板「大模型 → API Key」写入本文件（config.yaml 在 .gitignore 中，
+  # 保存时权限 600）。也可以手填。启动 BOT 不再询问、也不再读环境变量。
+  api_key: ""
+  # 支持图像输入的模型名（按你的服务端实际名称填写）
+  model: "deepseek-flash"
+  vision: true
+  temperature: 1.0
+  # 思考模式：auto=跟随服务端；enabled/disabled=显式开关
+  thinking: "auto"
+  # 思考等级：none/low/high/max（DeepSeek 官方 reasoning_effort）；auto=不传
+  reasoning_effort: "auto"
+  # 推理模型的「思考」token 也计入 max_tokens：设得太小会 finish_reason=length、正文为空
+  max_tokens: 12288
+  timeout_sec: 60
+  # 图片最长边（像素），越小越快越省 token
+  image_max_side: 768
+  # 模型返回非 JSON 时的兜底：把短文本当作回复
+  lenient_parse: true
+  # 提示词目录：内含 system.md（人设/风格/规则）与 user.md（动态内容）
+  # 直接编辑这两个文件即可，保存后自动生效；也可以给单个房间单独配置
+  prompt_dir: prompts
+  # 透传给服务端的额外参数（高级用法，一般留空）
+  # 注意：thinking.type 只接受 enabled/disabled，思考等级请写 reasoning_effort
+  extra_body: {}
+
+asr:
+  # 识别方式：stream=真流式（边说边出字，延迟低、上下文完整，但 BGM/歌声也会被转写）；
+  #           segment=VAD 断句后整句转写（能挡掉纯 BGM，代价是多等一次静音确认）。
+  mode: "segment"
+  # X-ASR 模型目录：存放 chunk-<N>ms-model，默认 data/models/xasr。
+  xasr_model_dir: "data/models/xasr"
+  # 流式分块：160/480/960/1920，越大越准。至少放对应一档模型；四档都放可随时切换。
+  xasr_chunk_ms: 1920
+  # 推理线程数：16 核建议 4。
+  xasr_threads: 4
+  # 停顿等待（仅 segment）：主播停顿后先等多久看有没有下半句。（单位：秒）
+  merge_wait_sec: 1.2
+  # 换句判定（仅 segment）：两段语音间隔超过该值就认为换句。（单位：秒）
+  merge_gap_max_sec: 2.5
+  # 单句最长音频：流式模式达到该长度强制断句，逐句模式会截断。（单位：秒）
+  max_audio_sec: 12
+  # 过滤幻觉文本：丢弃复读、字幕组套话、纯语气词。
+  filter_hallucination: true
+  # 转写并发数：多房间共用模型，建议保持 1。
+  max_workers: 1
+
+vad:
+  # 采样率固定 16000，不匹配会报错
+  sample_rate: 16000
+  # 能量阈值下限（0-32767），嘈杂环境可调高
+  min_rms: 210
+  # 噪声底倍数
+  noise_factor: 3.2
+  # 连续多少毫秒有声才认为开始说话
+  start_ms: 60
+  # 连续多少毫秒静音判定一句结束（太小会把一句话切碎，太大字幕变慢）
+  silence_ms: 1000
+  # 最短有效语音（毫秒），更短丢弃
+  min_speech_ms: 900
+  # 单句最长（毫秒），超时强制切分
+  max_speech_ms: 12000
+  # 句首保留的前置音频（毫秒），避免吃字
+  pre_roll_ms: 350
+
+reply:
+  # speech  ：主播说话后才判断要不要接一句（默认，BOT 只和主播互动）
+  # ambient ：定时巡检，结合语音 + 弹幕氛围决定
+  # off     ：只观察、不回复（也可用 dry_run 达到类似效果）
+  # 注意：弹幕不会触发回复，只作为「直播氛围」进入上下文
+  mode: speech
+  # 回复字数硬上限（B站弹幕实际限制 20 字，这里保守取 30，超长会被 guard 丢弃）
+  max_chars: 30
+  # 主播连续说话时，最少间隔多久才触发一次「要不要接话」的判断
+  speech_trigger_interval_sec: 30
+  # 语音转写短于这个字数不触发（过滤口头语）
+  speech_min_chars: 6
+  # ambient 模式的巡检间隔（秒）
+  ambient_interval_sec: 120
+  # 同一房间两次发送最小间隔（秒）
+  min_interval_sec: 65
+  max_per_hour: 60
+  max_per_minute: 3
+  # 仅 ambient 模式生效的触发概率（0-1）
+  probability: 0.7
+  # 静默时段，例：["01:00-08:00"]，留空表示不限制
+  quiet_hours: []
+  # 回复内容黑名单（命中即丢弃）
+  banned_words:
+    - "政治"
+    - "代练"
+    - "加群"
+    - "微信"
+    - "QQ"
+  # 与最近发送内容相似度阈值（0-1），超过视为重复
+  dup_threshold: 0.85
+
+  # 置信度门槛：开启后，模型返回的 confidence 低于阈值就不发这条（模型没给 confidence 时按 0 处理）。
+  confidence_gate: false
+  # 置信度阈值：0～1，建议 0.5～0.7。太低等于没开，太高会经常不出声。
+  confidence_threshold: 0.6
+
+  # 允许主播用 /mute N（分钟）让 BOT 自我禁言；/unmute 提前解除
+  mute_command_enabled: true
+  # ---- 被 @ 时的回应（观众在弹幕里 @ 了 BOT 账号昵称才触发）----
+  # 是否允许接一句；仍受普通冷却、每小时配额、黑名单等所有闸门约束
+  mention_enabled: true
+  # 两次「@ 回应」之间的最小间隔（秒），防止被刷 @
+  mention_min_interval_sec: 120
+  # 每小时最多因为被 @ 而回应几次（与 max_per_hour 叠加，取更严的）
+  mention_max_per_hour: 8
+context:
+  # 语音转写回看窗口（秒）；0 = 本场全程
+  transcript_window_sec: 0
+  # 弹幕回看窗口（秒）；0 = 本场全程
+  danmaku_window_sec: 0
+  # 首次连接补几条历史弹幕（0 = 不补，严格按场隔离）
+  history_danmaku: 0
+  # 最多带入多少条弹幕
+  max_danmaku: 80
+  # 上下文总字符预算（防止 prompt 过长）
+  max_chars: 8000

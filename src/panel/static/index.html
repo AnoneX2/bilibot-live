@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>bilibot 设置面板</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo">b</span>
+      <div>
+        <h1>bilibot 设置</h1>
+        <p id="configPath" class="sub">加载中…</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span id="dirtyFlag" class="dirty hidden">未保存</span>
+      <button id="btnReload" class="btn ghost" type="button">重新加载</button>
+      <button id="btnSave" class="btn primary" type="button">保存配置</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav id="nav" class="sidenav" aria-label="设置分组"></nav>
+    <main id="content" class="content">
+      <div id="banner" class="banner hidden"></div>
+      <div id="groups"></div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
